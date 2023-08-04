@@ -1,0 +1,88 @@
+[comment encoding = UTF-8 /]
+[module generate('http://www.example.org/sCED3', 'http://www.eclipse.org/uml2/5.0.0/UML/Profile/Standard', 'http://www.eclipse.org/uml2/5.0.0/UML', 'http://www.eclipse.org/uml2/5.0.0/Types')]
+
+
+[template public generateElement(sc : SmartContract)]
+[comment @main/]
+[file (sc.fileName.concat('.sol'), false, 'UTF-8')]
+//SPDX-License-Identifier: MIT
+pragma solidity [sc.pragmaSolidity/]
+
+contract [sc.fileName/]{
+
+[for (k: GVariable| sc.gvariables)]
+	[generarVariablesGlobales(k)/]
+[/for]
+
+[for (m : Mapping| sc.mappings)]
+	[generarMappings(m)/]
+[/for]
+
+[for (k: Event| sc.events)]
+	[generarEventos(k)/]
+[/for]
+
+[for (k: Struct| sc.structs)]
+	[generarEstructuras(k)/]
+[/for]
+
+[for (k: Struct| sc.structs)]
+	[instanciarEstructuras(k)/]
+[/for]
+
+[for (i : GlobalFunction | sc.globalfunctions)]
+	[generarFunciones(i)/]
+[/for]
+[GeneraEventos(sc)/]
+}
+[/file]
+[/template]
+
+[template public generarVariablesGlobales(gv : GVariable)]
+[gv.primitivetype.pType/] [gv.visGV/] [gv.namePPal/]; 
+[/template]
+
+[template public generarMappings (gm: Mapping)]
+mapping([gm.a1/] => [gm.a2/]) [gm.visM/] [gm.nameM/];	
+[/template]
+
+[template public generarEventos(e : Event)]
+event [e.nameE/]([for(j : EventMember| e.eventmembers)][j.TypeE/] [j.type.namePPal/][/for]);
+[/template]
+
+[template public generarEstructuras(st : Struct)]
+struct [st.nameS/] {
+[for (j : StructMember| st.members)]
+	[j.TypeSM/] [j.type.namePPal/]; 
+[/for]}
+[/template]
+
+[template public instanciarEstructuras(st : Struct)]
+[for (j : InstanceStruct| st.instancestruct)][st.nameS/] ['[]'/] [st.instancestruct.visIS/] [st.instancestruct.nameI/];[/for]
+[/template]
+
+[template public generarFunciones(gf : GlobalFunction)]
+function [gf.name/]([for(j:FunctionParameter | gf.parameters) separator(', ')][if(j.pType.toString()='string')][j.pType/] memory [j.name/][/if][if(j.pType.toString()='int')][j.pType/] [j.name/][/if][/for]) [gf.visGF/] [gf.TypeFunction/]{ 
+	[gf.instructions/];
+	return [gf.returns.name/];
+}
+[/template]
+
+[template public GeneraEventos(sc1 : SmartContract)]
+[for (gv : GVariable | sc1.gvariables)]
+	[for (b : Event| sc1.events)]
+	function ['set'.concat(gv.namePPal.toUpperFirst())/]([if(gv.primitivetype.pType.toString()='string')][gv.primitivetype.pType/] memory ['_'.concat(gv.namePPal)/][/if][if(gv.primitivetype.pType.toString()='int')][gv.primitivetype.pType/] ['_'.concat(gv.namePPal)/][/if]) [gv.visGV/]{
+		[gv.namePPal/] = ['_'.concat(gv.namePPal)/];
+		//instrucciones
+		//se emite una llamada al eventos
+		emit [b.nameE/]("[gv.namePPal/]");
+	}
+
+	function ['get'.concat(gv.namePPal.toUpperFirst())/]() [gv.visGV/] view returns ([if(gv.primitivetype.pType.toString()='string')][gv.primitivetype.pType/] memory [/if]) {
+		return [gv.namePPal/]; 
+	}
+
+	[/for]
+[/for]
+[/template]
+

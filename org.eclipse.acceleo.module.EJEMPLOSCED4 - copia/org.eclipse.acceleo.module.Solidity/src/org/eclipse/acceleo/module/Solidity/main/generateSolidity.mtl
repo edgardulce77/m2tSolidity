@@ -1,0 +1,88 @@
+[comment encoding = UTF-8 /]
+[module generateSolidity('http://www.example.org/sCED3')]
+
+
+[template public generateSolidity(sc : SmartContract)]
+[comment @main/]
+[file (sc.SCED3Name.concat('.sol'), false, 'UTF-8')]
+//SPDX-License-Identifier: MIT
+pragma solidity [sc.pragmaSolidity/]
+
+contract [sc.SCED3Name/]{
+
+[for (k: GVariable| sc.gvariables)]
+	[generarVariablesGlobales(k)/]
+[/for]
+
+[for (m : Mapping| sc.mappings)]
+	[generarMappings(m)/]
+[/for]
+
+[for (k: Event| sc.events)]
+	[generarEventos(k)/]
+[/for]
+
+[for (k: Struct| sc.structs)]
+	[generarEstructuras(k)/]
+[/for]
+
+[for (k: Struct| sc.structs)]
+	[instanciarEstructuras(k)/]
+[/for]
+
+[for (i : GlobalFunction | sc.globalfunctions)]
+	[generarFunciones(i)/]
+[/for]
+[GeneraEventos(sc)/]
+
+}
+[/file]
+[/template]
+
+[template public generarVariablesGlobales(gv : GVariable)]
+[gv.ptypes.pType/] [gv.visGV/] [gv.namePPal/]; 
+[/template]
+
+[template public generarMappings (gm: Mapping)]
+mapping([gm.a1/] => [gm.a2/]) [gm.visM/] [gm.nameM/];	
+[/template]
+
+[template public generarEventos(e : Event)]
+event [e.nameE/]([for(j : EventMember| e.eventmembers)][j.TypeE/] [j.type.namePPal/][/for]);
+[/template]
+
+[template public generarEstructuras(st : Struct)]
+struct [st.nameS/] {
+[for (j : StructMember| st.members)]
+	[j.TypeSM/] [j.type.namePPal/]; 
+[/for]}
+[/template]
+
+[template public instanciarEstructuras(st : Struct)]
+[for (j : InstanceStruct| st.instancestructs)][st.nameS/] ['[]'/] [st.instancestructs.visIS/] [st.instancestructs.nameI/];[/for]
+[/template]
+
+[template public generarFunciones(gf : GlobalFunction)]
+function [gf.name/]([for(j:FunctionParameter | gf.parameters) separator(', ')][if(j.pType.toString()='string')][j.pType/] memory [j.name/][/if][if(j.pType.toString()='int')][j.pType/] [j.name/][/if][/for]) [gf.visGF/] [gf.TypeFunction/]{ 
+	// [gf.instructions/];
+	return [gf.returns.name/];
+}
+[/template]
+
+[template public GeneraEventos(sc1 : SmartContract)]
+[for (gv : GVariable | sc1.gvariables)]
+	[for (b : Event| sc1.events)]
+	function ['set'.concat(gv.namePPal.toUpperFirst())/]([if(gv.ptypes.pType.toString()='string')][gv.ptypes.pType/] memory ['_'.concat(gv.namePPal)/][/if][if(gv.ptypes.pType.toString()='int')][gv.ptypes.pType/] ['_'.concat(gv.namePPal)/][/if]) [gv.visGV/]{
+		[gv.namePPal/] = ['_'.concat(gv.namePPal)/];
+		//Instrucciones generales para la función;
+		//se emite una llamada al  evento 
+		emit [b.nameE/]("[gv.namePPal/]");
+	}
+
+	function ['get'.concat(gv.namePPal.toUpperFirst())/]() [gv.visGV/] view returns ([if(gv.ptypes.pType.toString()='string')][gv.ptypes.pType/] memory [/if]) {
+		return [gv.namePPal/]; 
+	}
+
+	[/for]
+[/for]
+[/template]
